@@ -1,0 +1,32 @@
+import pandas as pd
+import pickle
+
+# Sample product dataset
+data = {
+    "product_name": [
+        "Python Programming Book",
+        "Data Science Handbook",
+        "Machine Learning for Beginners",
+        "Deep Learning with TensorFlow",
+        "Artificial Intelligence Basics",
+        "Web Development with Django",
+        "Flask Web Framework Guide",
+        "Data Analysis with Pandas",
+        "Statistics for Data Science",
+        "Advanced Python Tricks"
+    ],
+    "price": [25, 30, 28, 40, 35, 22, 20, 27, 32, 29],
+    "category": [
+        "Books", "Books", "Books", "Books", "Books",
+        "Books", "Books", "Books", "Books", "Books"
+    ]
+}
+
+# Create a DataFrame
+df = pd.DataFrame(data)
+
+# Save as pickle file
+with open("products.pkl", "wb") as file:
+    pickle.dump(df, file)
+
+print("products.pkl file created successfully!")
