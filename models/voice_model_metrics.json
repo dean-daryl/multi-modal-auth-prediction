@@ -1,0 +1,12 @@
+{
+    "accuracy": 0.8333333333333334,
+    "f1_score": 0.8333333333333334,
+    "classes": [
+        "david",
+        "dean",
+        "joel",
+        "lesly",
+        "nicholas"
+    ],
+    "test_size": 6
+}
