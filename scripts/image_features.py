@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 import face_recognition
+import matplotlib.pyplot as plt
 
 IMAGE_DIR = "../data/images"
 OUTPUT_CSV = "../data/image_features.csv"
@@ -46,6 +47,20 @@ for fname in os.listdir(IMAGE_DIR):
     if fname.lower().endswith(('.jpg', '.png', '.jpeg')):
         img = cv2.imread(os.path.join(IMAGE_DIR, fname))
         aug_imgs, aug_types = augment_image(img)
+
+        # Visualization: Show original and augmentations
+        plt.figure(figsize=(15, 3))
+        for i, (aug_img, aug_type) in enumerate(zip(aug_imgs, aug_types)):
+            plt.subplot(1, len(aug_imgs), i+1)
+            if len(aug_img.shape) == 2:
+                plt.imshow(aug_img, cmap='gray')
+            else:
+                plt.imshow(cv2.cvtColor(aug_img, cv2.COLOR_BGR2RGB))
+            plt.title(aug_type)
+            plt.axis('off')
+        plt.suptitle(f"Augmentations for {fname}")
+        plt.show()
+
         for aug_img, aug_type in zip(aug_imgs, aug_types):
             embedding, hist = extract_features(aug_img)
             row = {"filename": fname, "augmentation": aug_type}

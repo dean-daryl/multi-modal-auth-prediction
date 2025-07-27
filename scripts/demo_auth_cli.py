@@ -5,11 +5,24 @@ import cv2
 import face_recognition
 import librosa
 import os
+import noisereduce as nr
+import pandas as pd
+
 
 # Paths to models (adjust if needed)
 FACE_MODEL_PATH = "../models/face_model.pkl"
 PCA_MODEL_PATH = "../models/pca_model.pkl"
 VOICE_MODEL_PATH = "../models/voice_model.pkl"
+PRODUCT_MODEL_PATH = "../models/product_recommendation_model.pkl"
+MERGED_DATA_PATH = "../data/merged_data.csv"
+
+# Hard-coded feature columns for product recommendation
+PRODUCT_FEATURE_COLS = [
+    'engagement_score', 'purchase_interest_score', 'customer_rating', 'purchase_amount',
+    'review_sentiment_Negative', 'review_sentiment_Neutral', 'review_sentiment_Positive', 'review_sentiment_Unknown',
+    'social_media_platform_Facebook', 'social_media_platform_Instagram', 'social_media_platform_LinkedIn',
+    'social_media_platform_TikTok', 'social_media_platform_Twitter', 'social_media_platform_Unknown'
+]
 
 AUTH_THRESHOLD = 0.6
 SAMPLE_RATE = 16000
@@ -39,7 +52,6 @@ def extract_voice_features(audio_path):
     """
     Loads an audio file and extracts features compatible with the trained model.
     """
-    import noisereduce as nr
     y, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
     try:
         y = nr.reduce_noise(y=y, sr=sr)
@@ -74,7 +86,7 @@ def predict_face(image_path, face_model, pca):
     face = extract_face(image_path)
     if face is None:
         return {"status": "unauthorized", "reason": "No face found"}
-    
+
     print("Extracted face shape:", face.shape)  # Should be (10000,) if 100x100 grayscale
     print("Expected PCA input size (pca.n_features_):", pca.n_features_in_)
 
@@ -123,6 +135,7 @@ def main():
         face_model = joblib.load(FACE_MODEL_PATH)
         pca = joblib.load(PCA_MODEL_PATH)
         voice_model_data = joblib.load(VOICE_MODEL_PATH)
+        product_model = joblib.load(PRODUCT_MODEL_PATH)
     except Exception as e:
         print(f"Error loading models: {e}")
         sys.exit(1)
@@ -139,6 +152,25 @@ def main():
     print(f"Voice Recognition: {voice_result}")
     if voice_result["status"] != "authorized":
         print("❌ Unauthorized voice attempt. Exiting.")
+        sys.exit(1)
+
+    # --- Product Recommendation ---
+    # Default to user_id = '100' if not provided
+    try:
+        df = pd.read_csv(MERGED_DATA_PATH)
+        # Ensure user_id is the same type as in the CSV
+        # Assume user_id is an integer and is 100
+        print(df['customer_id_new'].unique())
+        user_rows = df[df['customer_id_new'] == '100']
+        if user_rows.empty:
+            print("No data found for user. Cannot generate recommendation.")
+            sys.exit(1)
+        user_features = user_rows.iloc[-1]
+        X_user = user_features[PRODUCT_FEATURE_COLS].values.reshape(1, -1)
+        predicted_category = product_model.predict(X_user)[0]
+        print(f"🎁 Recommended Product Category: {predicted_category}")
+    except Exception as e:
+        print(f"Error generating product recommendation: {e}")
         sys.exit(1)
 
     print(f"✅ Authorized user: {face_result['user']} (Face), {voice_result['user']} (Voice)")
